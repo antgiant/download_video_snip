@@ -70,7 +70,7 @@ exit $?
 cd /D "%~dp0"
 
 SET audio=
-CHOICE /M "Do you want Audio only (MP3)?" 
+CHOICE /M "Do you want Audio only (MP3)? "
 IF "%ERRORLEVEL%" == "1" GOTO Audio_Only
 GOTO Audio_Done
 :Audio_Only
@@ -93,7 +93,6 @@ IF "%end_time%" == "" GOTO Blank_End
 SET end_time=-t %end_time%
 GOTO End_End
 :Blank_End
-SET start_time=
 SET end_time=
 :End_End
 
