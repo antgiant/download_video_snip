@@ -1,5 +1,71 @@
+: # This is a special script which intermixes both sh
+: # and cmd code. It is written this way because it is
+: # used in system() shell-outs directly in otherwise
+: # portable code. See https://stackoverflow.com/questions/17510688
+: # for details.
+:<<"::CMDLITERAL"
 @ECHO OFF
+GOTO :CMDSCRIPT
+: # -----------------------------------------------------
+: # Bash Script Starts Here
+: # -----------------------------------------------------
+::CMDLITERAL
+## Who am i? ##
+## Get real path ##
+_script="$(readlink -f ${BASH_SOURCE[0]})"
+ 
+## Delete last component from $_script ##
+_mydir="$(dirname $_script)"
 
+## Set active path to this folder
+cd "$_mydir"
+
+while true; do
+    read -n 1 -p "Do you want Audio only (MP3)? " yn
+    case $yn in
+        [Yy]* ) audio="-f bestaudio --extract-audio --audio-format mp3"; break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+echo ""
+
+read -p "Please enter the Start Time in 00:00:00.000 format: " start_time
+read -p "Please enter the End Time in 00:00:00.000 format (Blank for Entire Video): " end_time
+read -p "Please enter the output filename (Blank for default): " filename
+read -p "Please enter the video URL: " url
+
+if [ -z "$start_time" ]
+then
+      start_time="-ss 0"
+else
+      start_time="-ss $start_time"
+fi
+
+if [ -z "$end_time" ]
+then
+      start_time=""
+      end_time=""
+else
+      end_time="-t $end_time"
+fi
+
+if [ -z "$filename" ]
+then
+      filename=""
+else
+      filename="$filename.%(ext)s"
+fi
+
+./youtube-dl $audio "$filename" --embed-thumbnail --add-metadata --postprocessor-args "$start_time $end_time" "$url" 
+echo ""
+read -n 1 -p "Press Any Key to Continue"
+
+exit $?
+: # -----------------------------------------------------
+: # Windows Part Starts Here
+: # -----------------------------------------------------
+:CMDSCRIPT
 @REM Set active path to this folder
 cd /D "%~dp0"
 
