@@ -90,7 +90,7 @@ SET start_time=0
 SET start_time=-ss %start_time%
 
 IF "%end_time%" == "" GOTO Blank_End
-SET end_time=-t %end_time%
+SET end_time=-to %end_time%
 GOTO End_End
 :Blank_End
 SET end_time=
@@ -103,5 +103,27 @@ SET filename=-o "%filename%.%%(ext)s"
 :filename_done
 
 @ECHO ON
-youtube-dl %audio% %filename%  --embed-thumbnail --add-metadata --postprocessor-args "%start_time% %end_time%" "%url%" 
-@pause
+@REM Download the entire Video
+youtube-dl %audio% %filename% --embed-thumbnail --add-metadata --no-playlist "%url%" -v
+
+@ECHO OFF
+@REM Wait for youtube-dl to finish
+timeout 3
+@REM Get the filename youtube-dl just created
+dir /O-d /TC /b >%TEMP%\temp_file_list.txt
+set /p first_file=<%TEMP%\temp_file_list.txt
+del %TEMP%\temp_file_list.txt
+
+@ECHO ON
+@REM Trim File
+ffmpeg -i "%first_file%" %start_time% %end_time% "trimmed_%first_file%"
+@REM Add back cover art
+ffmpeg -y -i "%first_file%" -i "trimmed_%first_file%" -map 1 -codec copy -map 0:1 -map_metadata 0  -id3v2_version 3 "trimmed2_%first_file%"
+
+@ECHO OFF
+@REM Remove temp files.
+timeout 3
+move /Y "trimmed2_%first_file%" "%first_file%"
+del "trimmed_%first_file%"
+
+pause
