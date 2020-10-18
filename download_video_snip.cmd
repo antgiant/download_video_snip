@@ -4,8 +4,7 @@
 : # portable code. See https://stackoverflow.com/questions/17510688
 : # for details.
 :<<"::CMDLITERAL"
-@ECHO OFF
-GOTO :CMDSCRIPT
+@GOTO :CMDSCRIPT
 : # -----------------------------------------------------
 : # Bash Script Starts Here
 : # -----------------------------------------------------
@@ -57,7 +56,23 @@ else
       filename="$filename.%(ext)s"
 fi
 
-./youtube-dl $audio "$filename" --embed-thumbnail --add-metadata --postprocessor-args "$start_time $end_time" "$url" 
+./youtube-dl $audio "$filename" --embed-thumbnail --add-metadata --no-playlist "$url" 
+
+# Wait for youtube-dl to finish
+sleep 5
+# Get the filename youtube-dl just created
+first_file=$(ls -t | head -n1)
+
+# Trim File
+./ffmpeg -i "$first_file" $start_time $end_time "trimmed_$first_file"
+# Add back cover art
+./ffmpeg -y -i "$first_file" -i "trimmed_$first_file" -map 1 -codec copy -map 0:1 -map_metadata 0  -id3v2_version 3 "trimmed2_$first_file"
+
+# Remove temp files.
+sleep 5
+mv -f "trimmed2_$first_file" "$first_file"
+del "trimmed_$first_file"
+
 echo ""
 read -n 1 -p "Press Any Key to Continue"
 
@@ -66,6 +81,7 @@ exit $?
 : # Windows Part Starts Here
 : # -----------------------------------------------------
 :CMDSCRIPT
+@ECHO OFF
 @REM Set active path to this folder
 cd /D "%~dp0"
 
@@ -104,7 +120,7 @@ SET filename=-o "%filename%.%%(ext)s"
 
 @ECHO ON
 @REM Download the entire Video
-youtube-dl %audio% %filename% --embed-thumbnail --add-metadata --no-playlist "%url%" -v
+youtube-dl %audio% %filename% --embed-thumbnail --add-metadata --no-playlist "%url%"
 
 @ECHO OFF
 @REM Wait for youtube-dl to finish
